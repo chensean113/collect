@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>珍藏大師 Pro - 頂級私人典藏金庫</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@500;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+            background-color: #050505;
+            color: #e5e5e5;
+        }
+
+        .font-serif-tc {
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        .glass-header {
+            background: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .card-shadow {
+            background: #0f0f0f;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .card-shadow:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.8), 0 0 20px rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.4);
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-10vh) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+        }
+        .confetti { position: absolute; width: 6px; height: 12px; animation: confetti-fall 3s ease-in forwards; z-index: 100; border-radius: 2px;}
+
+        .stats-card {
+            background: linear-gradient(135deg, #171717 0%, #0a0a0a 100%);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            box-shadow: inset 0 0 40px rgba(245, 158, 11, 0.05);
+        }
+
+        .animation-pulse-gold {
+            animation: pulse-gold 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-gold {
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px rgba(245,158,11,0.5)); }
+            50% { opacity: .6; filter: drop-shadow(0 0 8px rgba(245,158,11,0.8)); }
+        }
+
+        /* 針對深色模式的輸入框與下拉選單覆蓋 */
+        input[type="text"], input[type="number"], input[type="url"], textarea, select {
+            background-color: #141414;
+            color: #f5f5f5;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2);
+        }
+        /* 隱藏預設日曆/時間 icon 濾鏡 */
+        ::-webkit-calendar-picker-indicator { filter: invert(1); }
+    </style>
+</head>
+<body class="overflow-hidden">
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- 側邊欄 -->
+        <aside class="w-80 bg-[#0a0a0a] border-r border-white/5 flex flex-col hidden lg:flex shadow-2xl z-40 relative">
+            <!-- 裝飾光暈 -->
+            <div class="absolute top-0 left-0 w-full h-64 bg-amber-500/5 blur-[100px] pointer-events-none"></div>
+
+            <div class="p-8 pb-4 relative z-10">
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="bg-gradient-to-br from-amber-400 to-amber-600 p-3 rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+                        <i class="fas fa-crown text-neutral-900 text-xl"></i>
+                    </div>
+                    <span class="font-serif-tc font-black text-2xl tracking-widest text-white">珍藏大師<span class="text-amber-500 text-base align-top ml-1">PRO</span></span>
+                </div>
+
+                <!-- 收藏家等級系統 -->
+                <div class="bg-[#141414] p-6 rounded-[32px] border border-white/5 mb-8 shadow-inner">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div id="levelIcon" class="w-10 h-10 rounded-xl bg-neutral-900 border border-white/10 shadow-sm flex items-center justify-center text-amber-500">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">鑑定頭銜</p>
+                                <p id="levelTitle" class="font-serif-tc font-black text-sm text-white">正在評估...</p>
+                            </div>
+                        </div>
+                        <span id="levelBadge" class="text-[10px] font-black px-2 py-1 bg-amber-500/10 text-amber-400 rounded-lg border border-amber-500/20 shadow-sm">LV.0</span>
+                    </div>
+                    <div class="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+                        <div id="levelProgress" class="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-1000 w-0 relative">
+                            <div class="absolute top-0 left-0 w-full h-full bg-white/20 animate-pulse"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <span id="totalPoints" class="text-[10px] font-bold text-neutral-500">0 積分</span>
+                        <span id="nextLevelInfo" class="text-[10px] font-bold text-amber-500">距下一級還差...</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav id="categoryNav" class="flex-1 px-4 overflow-y-auto space-y-2 custom-scrollbar relative z-10">
+                <!-- 由 JS 動態生成 -->
+            </nav>
+
+            <div class="p-6 border-t border-white/5 relative z-10">
+                <div class="mb-4 flex items-center justify-between px-2 text-[10px] font-black text-neutral-500 uppercase tracking-widest">
+                    <span>國際匯率參考 (TWD)</span>
+                    <i class="fas fa-sync-alt animate-spin-slow text-neutral-600"></i>
+                </div>
+                <div id="exchangeRatesDisplay" class="grid grid-cols-3 gap-2 mb-6"></div>
+                <button onclick="pickRandomItem()" class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-[20px] bg-[#1a1a1a] text-amber-500 hover:bg-neutral-800 hover:shadow-[0_0_15px_rgba(245,158,11,0.2)] transition-all font-black text-sm border border-white/5 active:scale-95">
+                    <i class="fas fa-gem text-lg"></i>
+                    盲盒鑑賞
+                </button>
+            </div>
+        </aside>
+
+        <!-- 主內容區 -->
+        <main class="flex-1 flex flex-col overflow-hidden relative bg-[#050505]">
+            <!-- 背景紋理 -->
+            <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 32px 32px;"></div>
+            <div id="confettiContainer" class="absolute inset-0 pointer-events-none z-50"></div>
+
+            <header class="h-24 glass-header flex items-center justify-between px-10 sticky top-0 z-30">
+                <div class="relative w-full max-w-md group">
+                    <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-amber-500 transition-colors"></i>
+                    <input 
+                        type="text" id="searchInput" placeholder="在金庫中搜尋..." 
+                        class="w-full pl-14 pr-6 py-3.5 rounded-2xl outline-none transition-all font-bold text-sm bg-[#141414] text-white border-white/10 focus:border-amber-500"
+                    >
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div id="cloudStatus" class="flex items-center gap-2 px-4 py-2 bg-[#141414] border border-white/5 rounded-full text-[10px] font-black text-neutral-400 uppercase tracking-widest">
+                        <i class="fas fa-circle text-[8px] text-neutral-600"></i>
+                        <span id="statusText">保險庫初始化...</span>
+                    </div>
+
+                    <!-- Google 登入按鈕與會員資訊 -->
+                    <button id="loginBtn" onclick="loginWithGoogle()" class="flex items-center gap-2 bg-[#141414] px-4 py-2 rounded-full text-neutral-300 hover:text-amber-500 border border-white/10 hover:border-amber-500/50 font-bold text-xs transition-all shadow-sm">
+                        <i class="fab fa-google text-white"></i> 授權登入
+                    </button>
+                    <div id="userProfile" class="hidden flex items-center gap-3 bg-[#141414] px-3 py-1.5 rounded-full border border-white/10">
+                        <img id="userAvatar" src="" class="w-7 h-7 rounded-full border border-amber-500/30 object-cover">
+                        <span id="userName" class="text-xs font-black text-neutral-200 max-w-[80px] truncate">VIP</span>
+                        <button onclick="logout()" class="text-xs font-bold text-neutral-500 hover:text-red-400 transition-colors ml-1" title="登出切換至訪客"><i class="fas fa-sign-out-alt"></i></button>
+                    </div>
+
+                    <div class="flex bg-[#141414] border border-white/5 rounded-2xl p-1 ml-2">
+                        <button onclick="setViewMode('grid')" id="btnGrid" class="p-2.5 rounded-xl transition-all bg-neutral-800 shadow-md text-amber-500">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button onclick="setViewMode('list')" id="btnList" class="p-2.5 rounded-xl transition-all text-neutral-500 hover:text-neutral-300">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                    <button onclick="openModal()" class="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-[#0a0a0a] px-8 py-4 rounded-[24px] font-black flex items-center gap-3 shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all active:scale-95 group ml-2">
+                        <i class="fas fa-plus group-hover:rotate-90 transition-transform"></i>
+                        <span class="tracking-wider">登錄新資產</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-10 custom-scrollbar relative z-10">
+                
+                <!-- 數據看板 -->
+                <section class="flex flex-col xl:flex-row gap-8 mb-12">
+                    <div class="bg-[#0f0f0f] p-8 rounded-[40px] border border-white/10 shadow-2xl flex-1 flex flex-col md:flex-row items-center gap-10 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none"></div>
+                        <div class="relative w-52 h-52 flex-shrink-0 z-10">
+                            <svg id="chartSvg" class="w-full h-full -rotate-90 drop-shadow-2xl" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#1f1f1f" stroke-width="12" />
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span id="statTotalCount" class="text-5xl font-serif-tc font-black text-white">0</span>
+                                <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mt-2">典藏總數</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 w-full z-10">
+                            <h3 class="text-xl font-serif-tc font-black text-white flex items-center gap-3 mb-6">
+                                <i class="fas fa-chart-pie text-amber-500"></i>
+                                資產版圖分析
+                            </h3>
+                            <div id="chartLegend" class="grid grid-cols-2 gap-3"></div>
+                        </div>
+                    </div>
+
+                    <!-- 財務核心區 -->
+                    <div class="stats-card p-10 rounded-[48px] text-white flex flex-col justify-between relative overflow-hidden xl:w-[450px] group">
+                        <div class="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/10 rounded-full blur-[60px] group-hover:scale-150 transition-transform duration-1000"></div>
+                        <div class="z-10">
+                            <div class="flex items-center justify-between mb-4">
+                                <p class="text-amber-500 font-bold tracking-[0.2em] uppercase text-xs">估計總市值 (TWD)</p>
+                                <div id="roiBadge" class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                                    <i class="fas fa-caret-up"></i>
+                                    <span>ROI 0%</span>
+                                </div>
+                            </div>
+                            <h2 id="statTotalValue" class="text-6xl font-serif-tc font-black tracking-tighter mb-8 tabular-nums drop-shadow-md text-white">$0</h2>
+                            
+                            <div class="grid grid-cols-2 gap-6">
+                                <div class="bg-[#050505]/50 p-5 rounded-3xl backdrop-blur-md border border-white/5">
+                                    <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">投入成本</p>
+                                    <p id="totalCostDisplay" class="font-black text-xl text-neutral-200">$0</p>
+                                </div>
+                                <div class="bg-[#050505]/50 p-5 rounded-3xl backdrop-blur-md border border-white/5">
+                                    <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">淨利預估</p>
+                                    <p id="totalProfitDisplay" class="font-black text-xl text-emerald-400">+$0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="exportFinancialReport()" class="mt-10 bg-neutral-900/80 border border-white/10 text-neutral-300 py-5 rounded-[28px] font-black text-sm flex items-center justify-center gap-3 hover:bg-amber-500 hover:text-[#0a0a0a] hover:border-amber-500 transition-all duration-300 z-10 active:scale-95 shadow-lg">
+                            <i class="fas fa-file-export"></i>
+                            導出典藏財務報表
+                        </button>
+                    </div>
+                </section>
+
+                <div class="flex items-center justify-between mb-8">
+                    <h2 id="displayCategory" class="text-4xl font-serif-tc font-black text-white tracking-wide flex items-center gap-4">
+                        全部典藏
+                        <span id="displayCount" class="text-xs font-bold text-neutral-400 px-4 py-1.5 bg-[#141414] border border-white/10 rounded-full tracking-widest font-sans">0 ITEMS</span>
+                    </h2>
+                    <div class="flex items-center gap-2 bg-[#141414] border border-white/10 px-5 py-2.5 rounded-2xl shadow-lg">
+                        <i class="fas fa-sliders-h text-neutral-500 text-xs"></i>
+                        <select id="sortSelect" class="bg-transparent border-none text-white focus:ring-0 cursor-pointer font-bold text-sm tracking-wide outline-none">
+                            <option value="date-desc" class="bg-[#141414]">最近入庫</option>
+                            <option value="value-desc" class="bg-[#141414]">市值最高</option>
+                            <option value="value-asc" class="bg-[#141414]">市值最低</option>
+                            <option value="rating-desc" class="bg-[#141414]">稀有程度</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="itemsContainer"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 沉浸式詳情頁 -->
+    <div id="detailOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-6 hidden">
+        <div class="absolute inset-0 bg-[#050505]/90 backdrop-blur-xl" onclick="closeDetail()"></div>
+        <div class="relative bg-[#0f0f0f] w-full max-w-6xl h-[90vh] rounded-[48px] shadow-[0_0_50px_rgba(0,0,0,1)] border border-white/10 overflow-hidden flex flex-col md:flex-row animate-in fade-in zoom-in duration-500">
+            <div id="detailImage" class="md:w-1/2 bg-[#050505] relative bg-cover bg-center border-r border-white/5">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] via-transparent to-transparent"></div>
+                <div class="absolute bottom-12 left-12 right-12 text-white">
+                    <div id="detailCategoryBadge" class="inline-block px-4 py-1.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full text-[10px] font-black uppercase mb-4 tracking-widest">標籤</div>
+                    <h2 id="detailName" class="text-4xl lg:text-5xl font-serif-tc font-black leading-tight mb-6 drop-shadow-lg">藏品名稱</h2>
+                    <p id="detailDesc" class="text-neutral-400 text-base font-medium line-clamp-4 leading-relaxed bg-[#050505]/40 p-4 rounded-2xl backdrop-blur-sm border border-white/5">描述內容...</p>
+                </div>
+            </div>
+            <div class="md:w-1/2 flex flex-col bg-[#0f0f0f]">
+                <div class="p-8 pb-4 flex items-center justify-between border-b border-white/5">
+                    <div>
+                        <h3 class="text-2xl font-serif-tc font-black text-white">資產分析與存摺</h3>
+                        <p class="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mt-2">Valuation Passbook</p>
+                    </div>
+                    <button onclick="closeDetail()" class="p-3 bg-neutral-900 hover:bg-red-500 hover:text-white rounded-full text-neutral-400 transition-colors border border-white/5"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-6 rounded-[24px] bg-[#141414] border border-white/5 shadow-inner">
+                            <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">目前估值 (TWD)</p>
+                            <p id="detailCurrentPrice" class="text-3xl font-serif-tc font-black text-amber-400">$0</p>
+                        </div>
+                        <div class="p-6 rounded-[24px] bg-[#141414] border border-white/5 shadow-inner">
+                            <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">歷史總增幅</p>
+                            <p id="detailPriceGrowth" class="text-3xl font-serif-tc font-black text-emerald-500">+0%</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 rounded-[32px] bg-[#141414] border border-white/5 shadow-inner">
+                        <div class="flex justify-between items-center mb-6">
+                            <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">市場走勢</p>
+                            <i class="fas fa-chart-area text-neutral-600"></i>
+                        </div>
+                        <div class="h-40 w-full relative">
+                            <canvas id="priceTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-4 px-2">
+                            <h4 class="font-serif-tc font-black text-white flex items-center gap-3"><i class="fas fa-history text-amber-500"></i> 鑑價紀錄</h4>
+                            <button onclick="openPriceUpdate()" class="text-[10px] font-black text-amber-900 bg-amber-500 px-4 py-2 rounded-full hover:bg-amber-400 transition-colors tracking-widest shadow-[0_0_10px_rgba(245,158,11,0.3)]">新增估價</button>
+                        </div>
+                        <div id="priceHistoryList" class="space-y-3"></div>
+                    </div>
+                </div>
+                <div class="p-8 pt-4 border-t border-white/5 flex gap-4 bg-[#0a0a0a]">
+                    <button onclick="deleteCurrentItem()" class="px-6 py-5 rounded-[24px] bg-neutral-900 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white font-black transition-all"><i class="fas fa-trash-alt"></i></button>
+                    <button onclick="openModalFromDetail()" class="flex-1 py-5 rounded-[24px] bg-neutral-200 text-neutral-900 font-black active:scale-95 transition-all hover:bg-white tracking-widest">編輯資產資訊</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 價格更新彈窗 (支援多幣別) -->
+    <div id="priceModalOverlay" class="fixed inset-0 z-[70] flex items-center justify-center p-6 hidden">
+        <div class="absolute inset-0 bg-[#050505]/90 backdrop-blur-xl" onclick="closePriceUpdate()"></div>
+        <div class="relative bg-[#141414] w-full max-w-md rounded-[48px] shadow-[0_0_40px_rgba(0,0,0,1)] border border-white/10 p-10 animate-in slide-in-from-bottom-10">
+            <h2 class="text-3xl font-serif-tc font-black text-white mb-2">更新估價</h2>
+            <p class="text-amber-500 text-xs font-bold tracking-[0.2em] mb-8 uppercase">Value Appraisal</p>
+            <form id="priceUpdateForm" class="space-y-6">
+                
+                <div class="relative">
+                    <label class="text-[10px] font-black text-neutral-400 uppercase absolute -top-2 left-6 bg-[#141414] px-2 z-10 tracking-widest">評估幣別與金額</label>
+                    <div class="flex gap-2">
+                        <select id="updateCurrency" class="w-1/3 px-4 py-4 rounded-[24px] outline-none font-black text-center text-sm">
+                            <option value="TWD">TWD</option>
+                            <option value="USD">USD</option>
+                            <option value="JPY">JPY</option>
+                            <option value="EUR">EUR</option>
+                        </select>
+                        <input type="number" step="0.01" id="updatePrice" required placeholder="輸入金額" class="w-2/3 px-6 py-4 rounded-[24px] outline-none font-black text-lg font-serif-tc">
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <label class="text-[10px] font-black text-neutral-400 uppercase absolute -top-2 left-6 bg-[#141414] px-2 tracking-widest">價格來源標籤</label>
+                    <select id="updateSource" class="w-full px-8 py-4 rounded-[24px] outline-none font-bold">
+                        <option value="市場行情">市場觀察行情</option>
+                        <option value="eBay 成交">eBay 近期成交價</option>
+                        <option value="拍賣紀錄">拍賣紀錄</option>
+                        <option value="專業鑑定">專業機構鑑定</option>
+                        <option value="自訂匯率調整">自動匯率更新</option>
+                    </select>
+                </div>
+                <div class="relative">
+                    <label class="text-[10px] font-black text-neutral-400 uppercase absolute -top-2 left-6 bg-[#141414] px-2 tracking-widest">補充說明</label>
+                    <textarea id="updateNote" rows="2" placeholder="備註描述..." class="w-full px-8 py-4 rounded-[24px] outline-none resize-none text-sm font-medium"></textarea>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closePriceUpdate()" class="flex-1 py-4 bg-neutral-900 border border-white/10 text-neutral-400 font-black rounded-[20px] transition-colors hover:bg-neutral-800 tracking-widest">取消</button>
+                    <button type="submit" class="flex-1 py-4 bg-amber-500 text-neutral-950 font-black rounded-[20px] hover:bg-amber-400 transition-colors tracking-widest shadow-[0_0_15px_rgba(245,158,11,0.4)]">確認更新</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 基礎資料彈窗 (包含多幣別與圖片上傳) -->
+    <div id="modalOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-[#050505]/90 backdrop-blur-xl" onclick="closeModal()"></div>
+        <div class="relative bg-[#0f0f0f] w-full max-w-xl rounded-[48px] shadow-[0_0_50px_rgba(0,0,0,1)] border border-white/10 p-12 overflow-hidden animate-in zoom-in duration-300">
+            <h2 id="modalTitle" class="text-4xl font-serif-tc font-black text-white mb-2 tracking-wide">登錄新資產</h2>
+            <p class="text-amber-500 text-xs font-bold tracking-[0.2em] mb-10 uppercase">Asset Registration</p>
+            <form id="itemForm" class="space-y-6">
+                <input type="hidden" id="itemId">
+                
+                <div class="relative">
+                    <label class="text-[10px] font-black text-neutral-400 uppercase absolute -top-2 left-6 bg-[#0f0f0f] px-2 tracking-widest z-10">資產名稱</label>
+                    <input type="text" id="itemName" required placeholder="例如：1964 絕版紀念..." class="w-full px-8 py-5 rounded-[24px] outline-none font-serif-tc font-black text-lg">
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="relative">
+                        <label class="text-[10px] font-black text-neutral-400 uppercase absolute -top-2 left-6 bg-[#0f0f0f] px-2 tracking-widest z-10">類別</label>
+                        <select id="itemCategory" class="w-full px-6 py-5 rounded-[24px] outline-none font-bold">
+                            <!-- 選項改由 JavaScript 動態生成 -->
+                        </select>
+                    </div>
+                    <div class="relative flex gap-2">
+                        <label class="text-[10px] font-black text-neutral-400 uppercase absolute -top-2 left-4 bg-[#0f0f0f] px-2 tracking-widest z-10">幣別與成本</label>
+                        <select id="itemCurrency" class="w-2/5 px-2 py-5 rounded-[24px] outline-none font-black text-center text-sm">
+                            <option value="TWD">TWD</option>
+                            <option value="USD">USD</option>
+                            <option value="JPY">JPY</option>
+                            <option value="EUR">EUR</option>
+                        </select>
+                        <input type="number" step="0.01" id="itemValue" required placeholder="金額" class="w-3/5 px-4 py-5 rounded-[24px] outline-none font-serif-tc font-black text-sm">
+                    </div>
+                </div>
+                
+                <!-- 圖片上傳區塊 -->
+                <div class="relative">
+                    <label class="text-[10px] font-black text-neutral-400 uppercase absolute -top-2 left-6 bg-[#0f0f0f] px-2 tracking-widest z-10">影像資料 (上傳或輸入網址)</label>
+                    <div class="flex gap-3">
+                        <input type="url" id="itemImage" placeholder="https://..." class="flex-1 px-8 py-5 rounded-[24px] outline-none text-sm">
+                        <div class="relative flex items-center justify-center bg-[#141414] border border-white/10 rounded-[24px] px-6 cursor-pointer hover:bg-neutral-800 transition-colors group">
+                            <i class="fas fa-upload text-amber-500 mr-2 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-xs font-black text-neutral-300 whitespace-nowrap tracking-widest">本機上傳</span>
+                            <input type="file" id="itemImageFile" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        </div>
+                    </div>
+                    <input type="hidden" id="itemImageBase64">
+                    <div id="itemImagePreviewContainer" class="hidden relative mt-4">
+                        <img id="itemImagePreview" class="w-full h-48 object-cover rounded-[24px] border border-white/10 shadow-lg">
+                        <button type="button" onclick="clearImagePreview()" class="absolute top-4 right-4 bg-black/60 backdrop-blur w-8 h-8 flex items-center justify-center rounded-full text-white hover:bg-red-500 transition-colors border border-white/20">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between px-6 py-2">
+                    <span class="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em]">稀有度評級</span>
+                    <div id="starContainer" class="flex gap-2"></div>
+                </div>
+
+                <div class="relative">
+                    <label class="text-[10px] font-black text-neutral-400 uppercase absolute -top-2 left-6 bg-[#0f0f0f] px-2 tracking-widest z-10">典藏背景與證書紀錄</label>
+                    <textarea id="itemDesc" rows="3" placeholder="記錄年份、品相、保卡資訊..." class="w-full px-8 py-5 rounded-[24px] outline-none resize-none font-medium text-sm"></textarea>
+                </div>
+                <div class="pt-6 flex gap-4">
+                    <button type="button" onclick="closeModal()" class="flex-1 py-5 bg-transparent border border-white/10 text-neutral-400 font-black rounded-[24px] hover:bg-white/5 transition-colors tracking-widest">取消</button>
+                    <button type="submit" class="flex-1 py-5 bg-gradient-to-r from-amber-600 to-amber-500 text-neutral-950 font-black rounded-[24px] hover:brightness-110 transition-all tracking-widest shadow-[0_0_20px_rgba(245,158,11,0.3)]">封存入庫</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK & Logic -->
+    <script type="module">
+        const BASE_CATEGORIES = ['全部', '模型手辦', '集換式卡牌', '名貴腕錶', '錢幣郵票', '動漫週邊', '當代藝術', '其他'];
+        // 頂級質感圖表配色：黃金、鉑金、玫瑰金、翡翠、藍寶石、紫水晶
+        const CHART_COLORS = ['#f59e0b', '#e2e8f0', '#fda4af', '#10b981', '#3b82f6', '#a855f7', '#06b6d4', '#f43f5e'];
+        
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBw869Cy6SrJ7Rtsz2kvPlmsqA5KIrSFFY",
+            authDomain: "collect-cddc6.firebaseapp.com",
+            projectId: "collect-cddc6",
+            storageBucket: "collect-cddc6.firebasestorage.app",
+            messagingSenderId: "588342480637",
+            appId: "1:588342480637:web:ae57bdd7612ad752973894",
+            measurementId: "G-GMN6FL2YBT"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appIdGlobal = typeof __app_id !== 'undefined' ? __app_id : 'collect-cddc6-pro';
+
+        let items = [];
+        let user = null;
+        let selectedCategory = '全部';
+        let searchQuery = '';
+        let viewMode = 'grid';
+        let sortKey = 'date-desc';
+        let currentRating = 5;
+        let selectedItemId = null;
+        let unsubscribe = null;
+        let exchangeRates = { USD: 32.5, JPY: 0.21, EUR: 34.8 };
+        let trendChartInstance = null; 
+
+        // 動態獲取所有分類
+        const getCategories = () => {
+            const currentItems = items && items.length > 0 ? items : DEFAULT_ITEMS;
+            const itemCats = currentItems.map(i => i.category);
+            return [...new Set([...BASE_CATEGORIES, ...itemCats])];
+        };
+
+        const DEFAULT_ITEMS = [
+            { id: 'sample1', name: '限量版 鋼鐵人 Mark 85', category: '模型手辦', value: 12500, rating: 5, date: '2024-01-20', description: 'Hot Toys 旗艦級收藏，具備奈米手套與精緻舊化塗裝。', imageUrl: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?auto=format&fit=crop&q=80&w=800', history: [{price: 11000, date: '2024-01-20', source: '初始入庫', note: '預購價格', originalCurrency: 'TWD', originalPrice: 11000}, {price: 12500, date: '2024-04-10', source: '市場觀察', note: '現貨漲價', originalCurrency: 'TWD', originalPrice: 12500}] },
+            { id: 'sample2', name: '1999 年首發噴火龍 閃卡', category: '集換式卡牌', value: 850000, rating: 5, date: '2023-11-05', description: 'PSA 10 完美品相，卡牌收藏界的絕對聖杯。', imageUrl: 'https://images.unsplash.com/photo-1613771404721-1f92d799e49f?auto=format&fit=crop&q=80&w=800', history: [{price: 700000, date: '2023-11-05', source: '拍賣中標', note: 'Heritage Auctions', originalCurrency: 'USD', originalPrice: 21500}, {price: 850000, date: '2024-02-15', source: '專業鑑價', note: '近期行情更新', originalCurrency: 'USD', originalPrice: 26000}] },
+            { id: 'sample3', name: '勞力士 潛航者系列 126610LN', category: '名貴腕錶', value: 420000, rating: 4, date: '2023-08-12', description: '經典黑水鬼，陶瓷圈與最新 3235 機芯。', imageUrl: 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=800', history: [{price: 380000, date: '2023-08-12', source: 'AD 店購入', note: '排隊兩年', originalCurrency: 'TWD', originalPrice: 380000}, {price: 400000, date: '2023-11-01', source: '市場觀察', note: '年末調漲', originalCurrency: 'TWD', originalPrice: 400000}, {price: 420000, date: '2024-01-05', source: '專業鑑定', note: '公定價更新', originalCurrency: 'TWD', originalPrice: 420000}] },
+            { id: 'sample4', name: '徠卡 M11 全片幅旁軸', category: '當代藝術', value: 275000, rating: 5, date: '2024-02-20', description: '攝影人的終極夢想，極致畫質。', imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=800', history: [{price: 275000, date: '2024-02-20', source: '專賣店', note: '新品購入', originalCurrency: 'EUR', originalPrice: 8500}] }
+        ];
+
+        // --- 導出財務報表功能 (CSV) ---
+        window.exportFinancialReport = () => {
+            const currentItems = items && items.length > 0 ? items : DEFAULT_ITEMS;
+            if (currentItems.length === 0) { alert("目前沒有任何典藏資料可以導出。"); return; }
+            let csvContent = "\uFEFF";
+            csvContent += "資產名稱,分類,登錄日期,投入成本(TWD),最新市值(TWD),原始幣別,原始購入價,淨損益(TWD),投資報酬率(ROI),稀有度,資產描述\n";
+
+            currentItems.forEach(item => {
+                const escapeCSV = (str) => `"${String(str || '').replace(/"/g, '""')}"`;
+                const name = escapeCSV(item.name);
+                const category = escapeCSV(item.category);
+                const date = escapeCSV(item.date);
+                
+                const initialPrice = item.history ? item.history[0].price : item.value;
+                const latestPrice = item.history ? item.history[item.history.length - 1].price : item.value;
+                
+                const origCur = item.history && item.history[0].originalCurrency ? item.history[0].originalCurrency : 'TWD';
+                const origPrice = item.history && item.history[0].originalPrice ? item.history[0].originalPrice : initialPrice;
+
+                const diff = latestPrice - initialPrice;
+                const roi = initialPrice > 0 ? ((diff / initialPrice) * 100).toFixed(1) + "%" : "0%";
+                const rating = item.rating || 5;
+                const desc = escapeCSV(item.description);
+
+                csvContent += `${name},${category},${date},${initialPrice},${latestPrice},${origCur},${origPrice},${diff},${roi},${rating},${desc}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+            link.setAttribute("download", `珍藏大師_財務報表_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        window.loginWithGoogle = async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                alert("彈出視窗被阻擋或登入失敗。系統維持預覽模式。");
+                await signInAnonymously(auth);
+            }
+        };
+
+        window.logout = async () => {
+            if(confirm('確定要鎖上金庫並登出嗎？')) {
+                await signOut(auth);
+                await signInAnonymously(auth);
+            }
+        };
+
+        document.getElementById('itemImageFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_SIZE = 800;
+                    let width = img.width; let height = img.height;
+                    if (width > height && width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } 
+                    else if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    document.getElementById('itemImageBase64').value = dataUrl;
+                    document.getElementById('itemImagePreview').src = dataUrl;
+                    document.getElementById('itemImagePreviewContainer').classList.remove('hidden');
+                    document.getElementById('itemImage').value = '';
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        window.clearImagePreview = () => {
+            document.getElementById('itemImageBase64').value = '';
+            document.getElementById('itemImagePreview').src = '';
+            document.getElementById('itemImagePreviewContainer').classList.add('hidden');
+            document.getElementById('itemImageFile').value = '';
+        };
+
+        const fetchRates = async () => {
+            try {
+                const res = await fetch('https://open.er-api.com/v6/latest/TWD');
+                const data = await res.json();
+                if (data?.rates) {
+                    exchangeRates = { USD: parseFloat((1/data.rates.USD).toFixed(2)), JPY: parseFloat((1/data.rates.JPY).toFixed(4)), EUR: parseFloat((1/data.rates.EUR).toFixed(2)) };
+                    renderRates();
+                }
+            } catch (e) {}
+        };
+        
+        const renderRates = () => {
+            const container = document.getElementById('exchangeRatesDisplay');
+            if (container) container.innerHTML = Object.entries(exchangeRates).map(([c,v])=>`<div class="bg-[#141414] border border-white/5 rounded-xl p-2 text-center shadow-inner"><p class="text-[9px] font-black text-neutral-500 mb-1 tracking-widest">${c}</p><p class="text-xs font-black text-amber-500">${v}</p></div>`).join('');
+        };
+
+        const convertToTWD = (amount, currency) => {
+            if (currency === 'TWD') return Number(amount);
+            if (exchangeRates[currency]) return Number((amount * exchangeRates[currency]).toFixed(0));
+            return Number(amount);
+        };
+
+        const getCollectionRef = () => {
+            if (user && !user.isAnonymous) return collection(db, 'artifacts', appIdGlobal, 'users', user.uid, 'items');
+            return collection(db, 'artifacts', appIdGlobal, 'public', 'data', 'items');
+        };
+
+        const initSystem = async () => {
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (user) {
+                    if (!user.isAnonymous) {
+                        document.getElementById('statusText').innerText = 'VIP 金庫連線中';
+                        document.getElementById('cloudStatus')?.querySelector('i')?.classList.replace('text-neutral-600', 'text-emerald-500');
+                        document.getElementById('loginBtn').classList.add('hidden');
+                        document.getElementById('userProfile').classList.remove('hidden');
+                        document.getElementById('userAvatar').src = user.photoURL || 'https://via.placeholder.com/150';
+                        document.getElementById('userName').innerText = user.displayName || '收藏家';
+                    } else {
+                        document.getElementById('statusText').innerText = '公用大廳展示';
+                        document.getElementById('cloudStatus')?.querySelector('i')?.classList.replace('text-neutral-600', 'text-emerald-500');
+                        document.getElementById('loginBtn').classList.remove('hidden');
+                        document.getElementById('userProfile').classList.add('hidden');
+                    }
+                    loadData();
+                } else {
+                    document.getElementById('statusText').innerText = '離線鑑賞模式';
+                    items = [...DEFAULT_ITEMS]; renderAll();
+                }
+            });
+
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    try { await signInWithCustomToken(auth, __initial_auth_token); } 
+                    catch (e) { await signInAnonymously(auth); }
+                } else { await signInAnonymously(auth); }
+            } catch (err) {
+                document.getElementById('statusText').innerText = '本機鑑賞模式';
+                items = [...DEFAULT_ITEMS]; renderAll();
+            }
+            fetchRates();
+        };
+
+        const loadData = () => {
+            if (!user) return;
+            if (unsubscribe) unsubscribe();
+            unsubscribe = onSnapshot(query(getCollectionRef()), (snapshot) => {
+                const cloudItems = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (user.isAnonymous && cloudItems.length === 0) items = [...DEFAULT_ITEMS];
+                else items = cloudItems;
+                renderAll();
+                if (selectedItemId) renderDetail(selectedItemId);
+            }, (error) => {
+                document.getElementById('statusText').innerText = '權限鎖定 (展示範例)';
+                items = [...DEFAULT_ITEMS]; renderAll();
+            });
+        };
+
+        const renderAll = () => { calculateData(); renderNav(); renderChart(); renderItems(); };
+
+        const renderNav = () => {
+            const container = document.getElementById('categoryNav');
+            if (!container) return;
+            const currentItems = items && items.length > 0 ? items : DEFAULT_ITEMS;
+            const dynamicCategories = getCategories();
+            
+            container.innerHTML = dynamicCategories.map(cat => `
+                <button onclick="setCategory('${cat}')" class="w-full flex items-center justify-between px-5 py-4 rounded-[20px] transition-all group border ${selectedCategory === cat ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : 'border-transparent text-neutral-500 hover:bg-[#141414] hover:text-amber-400 hover:border-white/5'}">
+                    <div class="flex items-center gap-4">
+                        <div class="w-1.5 h-1.5 rounded-full ${selectedCategory === cat ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,1)]' : 'bg-neutral-700 group-hover:bg-amber-500/50'} transition-all duration-300"></div>
+                        <span class="font-black text-sm tracking-widest ${selectedCategory === cat ? 'text-amber-500' : ''}">${cat}</span>
+                    </div>
+                    <span class="text-[10px] font-black ${selectedCategory === cat ? 'text-amber-500/80' : 'text-neutral-700'}">${currentItems.filter(i => cat === '全部' || i.category === cat).length}</span>
+                </button>
+            `).join('');
+        };
+
+        const renderChart = () => {
+            const svg = document.getElementById('chartSvg');
+            const leg = document.getElementById('chartLegend');
+            if (!svg || !leg) return;
+            const currentItems = items && items.length > 0 ? items : DEFAULT_ITEMS;
+            const dynamicCategories = getCategories();
+            
+            const data = dynamicCategories.slice(1).map(cat => {
+                const val = currentItems.filter(i => i.category === cat).reduce((s, i) => s + Number(i.history?.[i.history.length-1]?.price || i.value || 0), 0);
+                return { name: cat, value: val };
+            }).filter(d => d.value > 0);
+            
+            const total = data.reduce((s, d) => s + d.value, 0);
+            let offset = 0;
+            svg.innerHTML = '<circle cx="50" cy="50" r="40" fill="transparent" stroke="#141414" stroke-width="12" />';
+            leg.innerHTML = '';
+            
+            if(total === 0) return;
+            data.forEach((d, i) => {
+                const p = (d.value / total) * 100;
+                const color = CHART_COLORS[i % CHART_COLORS.length];
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", "50"); circle.setAttribute("cy", "50"); circle.setAttribute("r", "40"); circle.setAttribute("fill", "transparent"); circle.setAttribute("stroke", color); circle.setAttribute("stroke-width", "12");
+                circle.setAttribute("stroke-dasharray", `${p * 2.51} 251`); circle.setAttribute("stroke-dashoffset", -offset * 2.51);
+                circle.setAttribute("class", "cursor-pointer drop-shadow-[0_0_8px_rgba(0,0,0,0.8)] transition-all duration-300 hover:stroke-[15px]"); circle.onclick = () => window.setCategory(d.name);
+                svg.appendChild(circle);
+                leg.innerHTML += `<div onclick="setCategory('${d.name}')" class="flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${selectedCategory === d.name ? 'bg-amber-500/10 border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.1)]' : 'border-white/5 bg-[#141414] hover:bg-[#1f1f1f]'}"><div class="w-3 h-3 rounded-full shadow-lg" style="background: ${color}; box-shadow: 0 0 8px ${color}80"></div><div class="overflow-hidden"><p class="text-[10px] font-black text-neutral-300 truncate">${d.name}</p><p class="text-[9px] font-bold text-neutral-500">${Math.round(p)}%</p></div></div>`;
+                offset += p;
+            });
+        };
+
+        const calculateData = () => {
+            const currentItems = items && items.length > 0 ? items : DEFAULT_ITEMS;
+            let currentMarketValue = 0, initialCostTotal = 0;
+            
+            currentItems.forEach(item => {
+                currentMarketValue += Number(item.history?.[item.history.length-1]?.price || item.value || 0);
+                initialCostTotal += Number(item.history?.[0]?.price || item.value || 0);
+            });
+            const profit = currentMarketValue - initialCostTotal;
+            const roi = initialCostTotal > 0 ? (profit / initialCostTotal * 100).toFixed(1) : 0;
+
+            document.getElementById('statTotalCount').innerText = currentItems.length;
+            document.getElementById('statTotalValue').innerText = `$${currentMarketValue.toLocaleString()}`;
+            document.getElementById('totalCostDisplay').innerText = `$${initialCostTotal.toLocaleString()}`;
+            document.getElementById('totalProfitDisplay').innerText = `${profit >= 0 ? '+' : ''}$${profit.toLocaleString()}`;
+            
+            const badge = document.getElementById('roiBadge');
+            badge.innerHTML = `<i class="fas fa-caret-${profit>=0?'up':'down'}"></i> ROI ${roi}%`;
+            if(profit >= 0) {
+                badge.className = `px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.1)]`;
+            } else {
+                badge.className = `px-3 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-[0_0_10px_rgba(239,68,68,0.1)]`;
+            }
+            const pts = (currentItems.length * 10) + Math.floor(currentMarketValue / 10000);
+            updateLevel(pts);
+        };
+
+        const updateLevel = (pts) => {
+            const lvls = [{ min: 0, title: '初級觀察員', icon: 'eye', color: 'text-neutral-500' }, { min: 50, title: '新銳藏家', icon: 'gem', color: 'text-emerald-500' }, { min: 200, title: '資深鑑定家', icon: 'balance-scale', color: 'text-blue-500' }, { min: 600, title: '頂級拍賣客', icon: 'gavel', color: 'text-amber-500' }, { min: 1500, title: '傳奇典藏領袖', icon: 'crown', color: 'text-yellow-400' }];
+            const curr = [...lvls].reverse().find(l => pts >= l.min) || lvls[0];
+            const next = lvls[lvls.indexOf(curr)+1];
+            document.getElementById('levelTitle').innerText = curr.title;
+            document.getElementById('levelTitle').className = `font-serif-tc font-black text-sm ${curr.color}`;
+            document.getElementById('levelBadge').innerText = `LV.${lvls.indexOf(curr)}`;
+            document.getElementById('levelIcon').innerHTML = `<i class="fas fa-${curr.icon}"></i>`;
+            document.getElementById('levelIcon').className = `w-10 h-10 rounded-xl bg-neutral-900 border border-white/10 shadow-sm flex items-center justify-center ${curr.color}`;
+            document.getElementById('totalPoints').innerText = `${pts} 積分`;
+            if (next) {
+                const prog = ((pts - curr.min) / (next.min - curr.min)) * 100;
+                document.getElementById('levelProgress').style.width = `${prog}%`;
+                document.getElementById('nextLevelInfo').innerText = `距下一級差 ${next.min - pts}`;
+            } else {
+                document.getElementById('levelProgress').style.width = '100%';
+                document.getElementById('nextLevelInfo').innerText = '頂峰級別';
+            }
+        };
+
+        const renderItems = () => {
+            const currentItems = items && items.length > 0 ? items : DEFAULT_ITEMS;
+            const container = document.getElementById('itemsContainer');
+            
+            let filtered = currentItems.filter(i => (selectedCategory === '全部' || i.category === selectedCategory) && i.name.toLowerCase().includes(searchQuery.toLowerCase()));
+            const [k, d] = sortKey.split('-');
+            filtered.sort((a, b) => {
+                let vA = (k==='value') ? (a.history?.[a.history.length-1]?.price || a.value) : a[k];
+                let vB = (k==='value') ? (b.history?.[b.history.length-1]?.price || b.value) : b[k];
+                return (d === 'asc') ? (vA < vB ? -1 : 1) : (vA < vB ? 1 : -1);
+            });
+            document.getElementById('displayCount').innerText = `${filtered.length} ITEMS`;
+            
+            if (filtered.length === 0) { container.innerHTML = `<div class="py-40 text-center text-neutral-600 font-black text-2xl tracking-[0.3em] font-serif-tc opacity-50">金庫中查無此項</div>`; return; }
+            
+            if (viewMode === 'grid') {
+                container.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8";
+                container.innerHTML = filtered.map(item => {
+                    const lat = item.history?.[item.history.length-1]?.price || item.value || 0;
+                    const ini = item.history?.[0]?.price || item.value || 0;
+                    const diff = lat - ini;
+                    return `
+                    <div onclick="openDetail('${item.id}')" class="group card-shadow rounded-[32px] overflow-hidden cursor-pointer flex flex-col relative">
+                        <div class="h-72 bg-[#111] relative overflow-hidden border-b border-white/5">
+                            ${item.imageUrl ? `<img src="${item.imageUrl}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80 group-hover:opacity-100">` : `<div class="absolute inset-0 flex items-center justify-center text-neutral-800"><i class="fas fa-image text-6xl"></i></div>`}
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] to-transparent opacity-80"></div>
+                            <div class="absolute top-5 left-5"><span class="bg-[#050505]/80 border border-white/10 backdrop-blur-md px-3 py-1.5 rounded-full text-[9px] font-black text-neutral-300 uppercase tracking-widest shadow-lg">${item.category}</span></div>
+                            ${diff !== 0 ? `<div class="absolute top-5 right-5 px-3 py-1.5 rounded-full text-[9px] font-black tracking-widest ${diff > 0 ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400' : 'bg-red-500/20 border border-red-500/30 text-red-400'} shadow-lg">${diff > 0 ? '+' : ''}${Math.round((diff/ini)*100)}%</div>` : ''}
+                        </div>
+                        <div class="p-8 flex-1 flex flex-col relative z-10 bg-[#0f0f0f]">
+                            <h3 class="font-serif-tc font-black text-2xl text-white mb-3 leading-snug group-hover:text-amber-400 transition-colors line-clamp-2">${item.name}</h3>
+                            <p class="text-neutral-500 text-xs mb-8 line-clamp-2 leading-relaxed font-medium">${item.description || '一件無可取代的傳世珍藏。'}</p>
+                            <div class="mt-auto flex items-end justify-between">
+                                <div>
+                                    <p class="font-serif-tc font-black text-amber-500 text-3xl tracking-tighter drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]">$${Number(lat).toLocaleString()}</p>
+                                </div>
+                                <div class="flex gap-1">
+                                    ${[1,2,3,4,5].map(n => `<i class="fas fa-star ${n <= (item.rating||5) ? 'text-amber-500 drop-shadow-[0_0_2px_rgba(245,158,11,0.8)]' : 'text-neutral-800'} text-[10px]"></i>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } else {
+                container.className = "bg-[#0f0f0f] rounded-[32px] border border-white/10 overflow-hidden shadow-2xl";
+                container.innerHTML = `<table class="w-full text-left"><thead><tr class="bg-[#141414] border-b border-white/5"><th class="px-8 py-6 font-black text-neutral-500 text-[10px] uppercase tracking-[0.2em]">資產檔案</th><th class="px-8 py-6 font-black text-neutral-500 text-[10px] uppercase tracking-[0.2em] text-right">當前市值 (TWD)</th><th class="px-8 py-6 font-black text-neutral-500 text-[10px] uppercase tracking-[0.2em]">登錄日期</th><th class="px-8 py-6 font-black text-neutral-500 text-[10px] uppercase tracking-[0.2em] text-right">漲跌幅</th></tr></thead><tbody class="divide-y divide-white/5">${filtered.map(item => {
+                    const lat = item.history?.[item.history.length-1]?.price || item.value || 0;
+                    const ini = item.history?.[0]?.price || item.value || 0;
+                    const diff = lat - ini;
+                    return `<tr onclick="openDetail('${item.id}')" class="group hover:bg-[#1a1a1a] transition-all cursor-pointer"><td class="px-8 py-6"><div class="flex items-center gap-6"><div class="w-16 h-16 rounded-2xl bg-[#050505] border border-white/5 overflow-hidden flex-shrink-0 relative">${item.imageUrl ? `<img src="${item.imageUrl}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">` : `<i class="fas fa-gem w-full h-full flex items-center justify-center text-neutral-800 text-xl"></i>`}</div><div><p class="font-serif-tc font-black text-white text-lg group-hover:text-amber-400 transition-colors mb-1">${item.name}</p><span class="text-[9px] font-black text-amber-500/70 border border-amber-500/20 uppercase bg-amber-500/10 px-2 py-0.5 rounded tracking-widest">${item.category}</span></div></div></td><td class="px-8 py-6 font-serif-tc font-black text-right text-amber-400 text-2xl tracking-tighter">$${Number(lat).toLocaleString()}</td><td class="px-8 py-6 text-neutral-500 font-bold text-xs tracking-widest">${item.date}</td><td class="px-8 py-6 text-right"><span class="px-3 py-1.5 rounded-full font-black text-[10px] border ${diff >= 0 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}">${diff >= 0 ? '+' : ''}${ini > 0 ? ((diff/ini)*100).toFixed(1) : 0}%</span></td></tr>`;
+                }).join('')}</tbody></table>`;
+            }
+        };
+
+        window.openDetail = (id) => { 
+            selectedItemId = id; 
+            renderDetail(id); 
+            document.getElementById('detailOverlay').classList.remove('hidden'); 
+        };
+
+        const renderDetail = (id) => {
+            const currentItems = items && items.length > 0 ? items : DEFAULT_ITEMS;
+            const item = currentItems.find(i => i.id === id); if (!item) return;
+            const history = item.history || [{ price: item.value, date: item.date, source: '初始入庫', note: '系統生成', originalCurrency: 'TWD', originalPrice: item.value }];
+            const cur = history[history.length-1].price, ini = history[0].price, grow = ini > 0 ? ((cur-ini)/ini*100).toFixed(1) : 0;
+            
+            document.getElementById('detailName').innerText = item.name;
+            document.getElementById('detailDesc').innerText = item.description || '此資產的歷史淵源尚待考證。';
+            document.getElementById('detailCategoryBadge').innerText = item.category;
+            document.getElementById('detailImage').style.backgroundImage = item.imageUrl ? `url('${item.imageUrl}')` : 'none';
+            document.getElementById('detailCurrentPrice').innerText = `$${Number(cur).toLocaleString()}`;
+            document.getElementById('detailPriceGrowth').innerText = `${grow>=0?'+':''}${grow}%`;
+            document.getElementById('detailPriceGrowth').className = `text-3xl font-serif-tc font-black ${grow>=0?'text-emerald-400':'text-red-400'}`;
+            
+            document.getElementById('priceHistoryList').innerHTML = [...history].reverse().map((h,idx)=> {
+                const origMarkup = (h.originalCurrency && h.originalCurrency !== 'TWD') ? `<span class="text-[9px] font-bold text-amber-600 ml-2 border border-amber-600/30 px-1.5 rounded bg-amber-500/5">${h.originalCurrency} ${Number(h.originalPrice).toLocaleString()}</span>` : '';
+                return `
+                <div class="flex items-center justify-between p-5 rounded-[24px] border border-white/5 bg-[#141414] hover:border-amber-500/30 transition-all group shadow-inner">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-[#0a0a0a] border border-white/5 flex items-center justify-center text-neutral-600 group-hover:text-amber-500 group-hover:border-amber-500/50 transition-colors shadow-lg"><i class="fas fa-gavel text-xs"></i></div>
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <p class="font-serif-tc font-black text-white text-lg">$${Number(h.price).toLocaleString()}</p>
+                                <span class="px-2 py-0.5 bg-neutral-800 border border-white/10 rounded text-[8px] font-black text-neutral-400 uppercase tracking-widest">${h.source||'鑑定'}</span>
+                            </div>
+                            <p class="text-[10px] font-bold text-neutral-500 mt-1 tracking-widest">${h.date} ${h.note?`<span class="text-neutral-600 mx-1">|</span>${h.note}`:''} ${origMarkup}</p>
+                        </div>
+                    </div>
+                    ${idx>0?`<button onclick="backtrackPrice(${history.length-1-idx})" class="opacity-0 group-hover:opacity-100 text-[10px] font-black text-amber-500 px-4 py-2 rounded-full border border-amber-500/50 hover:bg-amber-500 hover:text-[#0a0a0a] transition-all tracking-widest">設為現值</button>`:'<span class="text-[9px] font-black text-emerald-400 border border-emerald-500/30 px-3 py-1 bg-emerald-500/10 rounded-full tracking-widest">目前估價</span>'}
+                </div>
+            `}).join('');
+
+            if (trendChartInstance) trendChartInstance.destroy();
+            const ctx = document.getElementById('priceTrendChart').getContext('2d');
+            const labels = history.map(h => h.date);
+            const dataPts = history.map(h => h.price);
+            
+            trendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '估值 (TWD)',
+                        data: dataPts,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.05)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#0a0a0a',
+                        pointBorderColor: '#f59e0b',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { 
+                            backgroundColor: 'rgba(10,10,10,0.9)',
+                            titleColor: '#a3a3a3',
+                            bodyColor: '#f59e0b',
+                            bodyFont: { family: "'Noto Serif TC', serif", weight: 'bold', size: 14 },
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: { label: (ctx) => 'TWD $' + Number(ctx.raw).toLocaleString() } 
+                        } 
+                    },
+                    scales: { 
+                        x: { display: false }, 
+                        y: { 
+                            display: true, 
+                            position: 'right',
+                            grid: { color: 'rgba(255,255,255,0.03)' },
+                            border: { display: false },
+                            ticks: { color: '#525252', font: { family: "'Noto Sans TC'", size: 9 }, callback: (val) => '$'+(val/1000)+'k' }
+                        } 
+                    },
+                    layout: { padding: { left: 0, right: 0, top: 10, bottom: 0 } }
+                }
+            });
+        };
+
+        window.backtrackPrice = async (idx) => {
+            if (!confirm('確定要將此歷史紀錄設為當前估價嗎？')) return;
+            const currentItems = items && items.length > 0 ? items : DEFAULT_ITEMS;
+            const item = currentItems.find(i => i.id === selectedItemId);
+            const target = item.history[idx];
+            const newEntry = { 
+                price: target.price, 
+                date: new Date().toISOString().split('T')[0], 
+                source: '回溯覆寫', 
+                note: `自 ${target.date} 紀錄回復`,
+                originalCurrency: target.originalCurrency || 'TWD',
+                originalPrice: target.originalPrice || target.price
+            };
+            const hist = [...(item.history || []), newEntry];
+            
+            try {
+                if (user && !selectedItemId.startsWith('sample')) {
+                    await updateDoc(doc(getCollectionRef(), selectedItemId), { history: hist });
+                } else { 
+                    const i = items.findIndex(i => i.id === selectedItemId); if(i!==-1) items[i].history = hist; renderAll(); renderDetail(selectedItemId); 
+                }
+            } catch(e) { alert("操作失敗：金庫寫入權限受限。"); }
+        };
+
+        window.closeDetail = () => { document.getElementById('detailOverlay').classList.add('hidden'); selectedItemId = null; };
+        
+        window.openPriceUpdate = () => {
+            document.getElementById('updateCurrency').value = 'TWD';
+            document.getElementById('updatePrice').value = '';
+            document.getElementById('priceModalOverlay').classList.remove('hidden');
+        };
+        window.closePriceUpdate = () => document.getElementById('priceModalOverlay').classList.add('hidden');
+
+        document.getElementById('priceUpdateForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const currentItems = items && items.length > 0 ? items : DEFAULT_ITEMS;
+            const item = currentItems.find(i => i.id === selectedItemId);
+            
+            const origCur = document.getElementById('updateCurrency').value;
+            const origPrice = Number(document.getElementById('updatePrice').value);
+            const twdPrice = convertToTWD(origPrice, origCur);
+
+            const entry = { 
+                price: twdPrice, 
+                originalCurrency: origCur,
+                originalPrice: origPrice,
+                date: new Date().toISOString().split('T')[0], 
+                source: document.getElementById('updateSource').value, 
+                note: document.getElementById('updateNote').value 
+            };
+            const hist = [...(item.history || []), entry];
+            
+            try {
+                if (user && !selectedItemId.startsWith('sample')) {
+                    await updateDoc(doc(getCollectionRef(), selectedItemId), { history: hist });
+                } else { 
+                    const i = items.findIndex(i => i.id === selectedItemId); if(i!==-1) items[i].history = hist; renderAll(); renderDetail(selectedItemId); 
+                }
+                closePriceUpdate(); document.getElementById('priceUpdateForm').reset();
+            } catch(e) { alert("操作失敗：金庫寫入權限受限。"); }
+        };
+
+        const renderCategoryOptions = () => {
+            const select = document.getElementById('itemCategory');
+            if(!select) return;
+            const cats = getCategories().filter(c => c !== '全部');
+            select.innerHTML = cats.map(c => `<option value="${c}" class="bg-[#141414] text-white">${c}</option>`).join('') + `<option value="ADD_NEW" class="bg-amber-900 text-amber-400">➕ 新增自訂類別...</option>`;
+        };
+
+        // 綁定自訂分類事件
+        document.getElementById('itemCategory').addEventListener('change', function(e) {
+            if (e.target.value === 'ADD_NEW') {
+                const newCat = prompt('請輸入新的金庫分類名稱：\\n(例如：黑膠唱片、簽名球衣)');
+                if (newCat && newCat.trim() !== '') {
+                    const trimmedCat = newCat.trim();
+                    if (!BASE_CATEGORIES.includes(trimmedCat)) {
+                        BASE_CATEGORIES.push(trimmedCat);
+                    }
+                    renderCategoryOptions();
+                    e.target.value = trimmedCat;
+                    renderAll(); 
+                } else {
+                    renderCategoryOptions();
+                    e.target.value = getCategories()[1]; 
+                }
+            }
+        });
+
+        window.openModal = (it = null) => {
+            const modal = document.getElementById('modalOverlay');
+            renderCategoryOptions(); 
+
+            if (it) {
+                document.getElementById('modalTitle').innerText = '編輯資產資訊';
+                document.getElementById('itemId').value = it.id;
+                document.getElementById('itemName').value = it.name;
+                
+                const initialHist = it.history && it.history.length > 0 ? it.history[0] : null;
+                document.getElementById('itemCurrency').value = initialHist?.originalCurrency || 'TWD';
+                document.getElementById('itemValue').value = initialHist?.originalPrice || it.value;
+                
+                if (!getCategories().includes(it.category)) {
+                    BASE_CATEGORIES.push(it.category);
+                    renderCategoryOptions();
+                }
+                document.getElementById('itemCategory').value = it.category;
+                document.getElementById('itemDesc').value = it.description || '';
+                currentRating = it.rating || 5;
+
+                if (it.imageUrl && it.imageUrl.startsWith('data:image')) {
+                    document.getElementById('itemImageBase64').value = it.imageUrl;
+                    document.getElementById('itemImagePreview').src = it.imageUrl;
+                    document.getElementById('itemImagePreviewContainer').classList.remove('hidden');
+                    document.getElementById('itemImage').value = '';
+                } else {
+                    document.getElementById('itemImage').value = it.imageUrl || '';
+                    window.clearImagePreview();
+                }
+            } else {
+                document.getElementById('modalTitle').innerText = '登錄新資產';
+                document.getElementById('itemForm').reset();
+                document.getElementById('itemId').value = '';
+                document.getElementById('itemCurrency').value = 'TWD';
+                window.clearImagePreview();
+                currentRating = 5;
+            }
+            renderStars(); modal.classList.remove('hidden');
+        };
+
+        window.openModalFromDetail = () => {
+            const currentItems = items && items.length > 0 ? items : DEFAULT_ITEMS;
+            openModal(currentItems.find(i => i.id === selectedItemId));
+        }
+        window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
+        const renderStars = () => {
+            document.getElementById('starContainer').innerHTML = [1,2,3,4,5].map(n => `<button type="button" onclick="setRating(${n})" class="w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${currentRating >= n ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : 'bg-[#141414] border-white/5 text-neutral-700'}"><i class="fas fa-star text-lg ${currentRating >= n ? 'fill-current' : ''}"></i></button>`).join('');
+        };
+        window.setRating = (r) => { currentRating = r; renderStars(); };
+
+        document.getElementById('itemForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('itemId').value;
+            const base64Img = document.getElementById('itemImageBase64').value;
+            const urlImg = document.getElementById('itemImage').value;
+            const finalImageUrl = base64Img || urlImg;
+
+            const origCur = document.getElementById('itemCurrency').value;
+            const origPrice = Number(document.getElementById('itemValue').value);
+            const twdPrice = convertToTWD(origPrice, origCur);
+
+            const payload = { 
+                name: document.getElementById('itemName').value, 
+                category: document.getElementById('itemCategory').value, 
+                imageUrl: finalImageUrl, 
+                description: document.getElementById('itemDesc').value, 
+                rating: currentRating, 
+                updatedAt: new Date().toISOString() 
+            };
+            const collectionRef = getCollectionRef();
+
+            try {
+                if (!id || id.startsWith('sample')) {
+                    payload.date = new Date().toISOString().split('T')[0];
+                    payload.value = twdPrice;
+                    payload.history = [{ 
+                        price: twdPrice, 
+                        date: payload.date, 
+                        source: '首次登錄', 
+                        note: '建立檔案',
+                        originalCurrency: origCur,
+                        originalPrice: origPrice
+                    }];
+                    
+                    if (user && !user.isAnonymous) {
+                        await addDoc(collectionRef, payload);
+                    } else {
+                        items.push({ id: 'local-' + Date.now(), ...payload });
+                        renderAll();
+                    }
+                    triggerConfetti();
+                } else {
+                    if (user && !user.isAnonymous) {
+                        await updateDoc(doc(collectionRef, id), payload);
+                    } else {
+                        const idx = items.findIndex(i => i.id === id);
+                        if(idx !== -1) items[idx] = { ...items[idx], ...payload };
+                        renderAll();
+                    }
+                }
+                closeModal();
+            } catch(err) {
+                alert("操作失敗：金庫寫入權限受限。");
+            }
+        };
+
+        window.deleteCurrentItem = async () => {
+            if (!confirm('此操作將永久銷毀該資產紀錄，確認繼續？')) return;
+            try {
+                if (user && !selectedItemId.startsWith('sample')) {
+                    await deleteDoc(doc(getCollectionRef(), selectedItemId));
+                } else { 
+                    items = items.filter(i => i.id !== selectedItemId); 
+                }
+                closeDetail(); renderAll();
+            } catch(e) { alert("操作失敗：金庫寫入權限受限。"); }
+        };
+
+        window.setCategory = (c) => { selectedCategory = c; renderAll(); };
+        window.setViewMode = (m) => { viewMode = m; document.getElementById('btnGrid').className = `p-2.5 rounded-xl transition-all ${m==='grid'?'bg-neutral-800 shadow-md text-amber-500':'text-neutral-500 hover:text-neutral-300'}`; document.getElementById('btnList').className = `p-2.5 rounded-xl transition-all ${m==='list'?'bg-neutral-800 shadow-md text-amber-500':'text-neutral-500 hover:text-neutral-300'}`; renderItems(); };
+        document.getElementById('searchInput').oninput = (e) => { searchQuery = e.target.value; renderItems(); };
+        document.getElementById('sortSelect').onchange = (e) => { sortKey = e.target.value; renderItems(); };
+        window.pickRandomItem = () => { 
+            const currentItems = items && items.length > 0 ? items : DEFAULT_ITEMS;
+            if (currentItems.length > 0) openDetail(currentItems[Math.floor(Math.random() * currentItems.length)].id); 
+        };
+
+        const triggerConfetti = () => {
+            const container = document.getElementById('confettiContainer');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.8)]';
+                c.style.left = Math.random() * 100 + '%';
+                c.style.backgroundColor = ['#f59e0b', '#fbbf24', '#d97706', '#fcd34d'][Math.floor(Math.random() * 4)];
+                c.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 4000);
+            }
+        };
+
+        initSystem();
+        
+        window.loginWithGoogle = loginWithGoogle;
+        window.logout = logout;
+        window.exportFinancialReport = exportFinancialReport;
+        window.clearImagePreview = clearImagePreview;
+        window.setRating = setRating; window.closeModal = closeModal; 
+        window.openDetail = openDetail; window.closeDetail = closeDetail;
+        window.openPriceUpdate = openPriceUpdate; window.closePriceUpdate = closePriceUpdate;
+        window.backtrackPrice = backtrackPrice; window.openModalFromDetail = openModalFromDetail;
+        window.deleteCurrentItem = deleteCurrentItem; window.setCategory = setCategory; window.setViewMode = setViewMode;
+    </script>
+</body>
+</html>
