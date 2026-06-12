@@ -28,8 +28,8 @@ or reassigned mid-project).
 | Task | Primary Owner | Supporting Member(s) | Notes |
 |------|--------------|---------------------|-------|
 | **Task 1** — Relational schema design (`schema.sql`) |陳昱翔| | Designed all tables, keys, and constraints. |
-| **Task 2a** — Core availability & fare queries (`query_national_rail_availability`, `query_metro_schedules`, `query_national_rail_fare`, `query_metro_fare`) |黃士桓| |Implemented baseline SQL queries.|
-| **Task 2b** — Seat & user queries (`query_available_seats`, `query_user_profile`, `query_user_bookings`, `query_payment_info`) |黃士桓| |Implemented baseline lookup SQL queries.|
+| **Task 2a** — Core availability & fare queries (`query_national_rail_availability`, `query_metro_schedules`, `query_national_rail_fare`, `query_metro_fare`) |黃士桓|陳昱翔|Implemented baseline SQL queries.|
+| **Task 2b** — Seat & user queries (`query_available_seats`, `query_user_profile`, `query_user_bookings`, `query_payment_info`) |黃士桓|陳昱翔|Implemented baseline lookup SQL queries.|
 | **Task 2c** — Write operations (`execute_booking`, `execute_cancellation`) |陳昱翔| |Handled atomic database transactions and rollback logic.|
 | **Task 2d** — Authentication queries (`login_user`, `register_user`, `get_user_secret_question`, `verify_secret_answer`, `update_password`) |陳昱翔| | |
 | **Task 3** — PostgreSQL seeding (`seed_postgres.py`) |陳昱翔| |Implemented both PostgreSQL and Vector DB (pgvector) seeding scripts.|
