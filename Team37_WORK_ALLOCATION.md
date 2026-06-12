@@ -43,10 +43,10 @@ or reassigned mid-project).
 |---------|--------------|---------------------|-------|
 | Section 1 — ER Diagram |黃士桓| | |
 | Section 2 — Normalisation Justification |黃士桓|陳昱翔| |
-| Section 3 — Graph Database Design Rationale |黃士桓|陳昱翔| |
+| Section 3 — Graph Database Design Rationale |陳昱翔|黃士桓| |
 | Section 4 — Vector / RAG Design |黃士桓| | |
 | Section 5 — AI Tool Usage Evidence |陳昱翔| | |
-| Section 6 — Reflection & Trade-offs |陳昱翔| | |
+| Section 6 — Reflection & Trade-offs |黃士桓| | |
 | Section 7 — Optional Extension *(if applicable)* | | | |
 
 ---
